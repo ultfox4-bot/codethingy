@@ -2,8 +2,8 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 
 // Configuration
-const MIN_INTERVAL = 5 * 1000;  // 5 seconds in ms (for testing)
-const MAX_INTERVAL = 15 * 1000; // 15 seconds in ms (for testing)
+const MIN_INTERVAL = 20 * 1000;  // 5 seconds in ms (for testing)
+const MAX_INTERVAL = 350 * 1000; // 15 seconds in ms (for testing)
 
 let mainWindow;
 let timerActive = false;
