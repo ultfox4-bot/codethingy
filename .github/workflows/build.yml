@@ -25,5 +25,5 @@ jobs:
     - name: Upload EXE
       uses: actions/upload-artifact@v4
       with:
-        name: PopupVideoPlayer-Windows
+        name: App
         path: dist/*.exe
