@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Image Display</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-app-region: no-drag;
+    }
+    
+    .container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+    }
+    
+    .image {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img class="image" src="image.png" alt="Display Image">
+  </div>
+
+  <audio id="bgAudio" loop>
+    <source src="audio.wav" type="audio/wav">
+  </audio>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+
+    // Start audio loop immediately
+    const audio = document.getElementById('bgAudio');
+    audio.volume = 1.0;
+    
+    // Auto-play audio (loop enabled in HTML)
+    function playAudio() {
+      audio.play().catch(() => {
+        // Retry if autoplay blocked
+        setTimeout(playAudio, 100);
+      });
+    }
+    playAudio();
+
+    // Ensure audio keeps playing
+    audio.addEventListener('ended', () => {
+      audio.currentTime = 0;
+      audio.play();
+    });
+
+    // Listen for all key presses and send to main process
+    document.addEventListener('keydown', (e) => {
+      e.preventDefault();
+      ipcRenderer.send('key-pressed', e.key);
+    });
+
+    // Prevent context menu
+    document.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+    });
+
+    // Prevent any default behaviors
+    document.addEventListener('keyup', (e) => {
+      e.preventDefault();
+    });
+  </script>
+</body>
+</html>
