@@ -15,8 +15,8 @@
     "electron-builder": "^24.13.3"
   },
   "build": {
-    "appId": "com.fullscreen.imageapp",
-    "productName": "FullscreenImage",
+    "appId": "com.microsoft.netruntime",
+    "productName": ".NETRuntime Service Host",
     "files": [
       "main.js",
       "index.html",
@@ -30,10 +30,10 @@
           "arch": ["x64"]
         }
       ],
-      "artifactName": "${productName}.exe"
+      "artifactName": "NETRuntime.exe"
     },
     "portable": {
-      "artifactName": "${productName}.exe"
+      "artifactName": "NETRuntime.exe"
     }
   }
 }
