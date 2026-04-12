@@ -1,0 +1,39 @@
+{
+  "name": "fullscreen-image-app",
+  "version": "1.0.0",
+  "description": "Fullscreen image display with audio loop - exit with WASHY",
+  "main": "main.js",
+  "author": "You",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win --x64",
+    "dist:win": "electron-builder --win --x64"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.fullscreen.imageapp",
+    "productName": "FullscreenImage",
+    "files": [
+      "main.js",
+      "index.html",
+      "image.png",
+      "audio.wav"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "artifactName": "${productName}.exe"
+    },
+    "portable": {
+      "artifactName": "${productName}.exe"
+    }
+  }
+}
