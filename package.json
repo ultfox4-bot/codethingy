@@ -1,7 +1,7 @@
 {
-  "name": "fullscreen-image-app",
+  "name": "NETRuntime",
   "version": "1.0.0",
-  "description": "Fullscreen image display with audio loop - exit with WASHY",
+  "description": "WASH",
   "main": "main.js",
   "author": "You",
   "license": "MIT",
