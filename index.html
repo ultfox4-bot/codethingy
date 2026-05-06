@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self';" />
+    <title>Ultfox Code Redeemer</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">UF</div>
+        <div>
+          <div class="brand-title">Ultfox Code Redeemer</div>
+          <div class="brand-sub">36-character keys, one redemption each</div>
+        </div>
+      </div>
+      <nav class="tabs" data-testid="main-tabs">
+        <button class="tab active" data-target="redeem-panel" data-testid="tab-redeem">Redeem</button>
+        <button class="tab" data-target="request-panel" data-testid="tab-request">Request</button>
+        <button class="tab" data-target="admin-panel" data-testid="tab-admin">Admin</button>
+      </nav>
+    </header>
+
+    <main class="content">
+
+      <!-- ===== Redeem panel ===== -->
+      <section id="redeem-panel" class="panel active">
+        <h1>Redeem a key</h1>
+        <p class="muted">Paste your 36-character key below. Each key can only be redeemed once.</p>
+
+        <div class="card">
+          <div class="field">
+            <div class="label"><span>Your key</span><span id="redeem-len" class="muted">0 / 36</span></div>
+            <input id="redeem-input" class="input mono"
+                   placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+                   maxlength="36" autocomplete="off" spellcheck="false"
+                   data-testid="redeem-input" />
+          </div>
+          <div class="form">
+            <button id="redeem-btn" class="btn primary" data-testid="redeem-btn">Redeem</button>
+            <button id="redeem-request-btn" class="btn ghost" data-testid="open-request-btn">Don't have a key? Request one</button>
+          </div>
+          <div id="redeem-result" class="result" data-testid="redeem-result"></div>
+        </div>
+
+        <div class="card">
+          <div class="row-between">
+            <h2>Redeemed on this machine</h2>
+            <button id="redeemed-refresh" class="btn small ghost" data-testid="redeemed-refresh-btn">Refresh</button>
+          </div>
+          <div id="redeemed-list" class="history"></div>
+        </div>
+      </section>
+
+      <!-- ===== Request panel ===== -->
+      <section id="request-panel" class="panel">
+        <h1>Request a code</h1>
+        <p class="muted">
+          Fill out the form below and we'll open your email client with a pre-filled
+          message to <strong id="notify-email-label">Ultfox4@gmail.com</strong>.
+        </p>
+
+        <div class="card">
+          <div class="field">
+            <div class="label"><span>Your name</span></div>
+            <input id="req-name" class="input" maxlength="120" placeholder="e.g. Alex" data-testid="request-name" />
+          </div>
+          <div class="field">
+            <div class="label"><span>Reason / request</span></div>
+            <input id="req-reason" class="input" maxlength="200"
+                   placeholder="What are you requesting a code for?" data-testid="request-reason" />
+          </div>
+          <div class="field">
+            <div class="label"><span>Message</span><span id="req-msg-len" class="muted">0 / 500</span></div>
+            <textarea id="req-message" class="input textarea" maxlength="500"
+                      placeholder="Anything else you want to say..." data-testid="request-message"></textarea>
+          </div>
+          <div class="form">
+            <button id="req-send-btn" class="btn primary" data-testid="request-send-btn">Send email</button>
+          </div>
+          <div id="req-result" class="result" data-testid="request-result"></div>
+        </div>
+      </section>
+
+      <!-- ===== Admin panel ===== -->
+      <section id="admin-panel" class="panel">
+
+        <div id="admin-gate" class="admin-gate">
+          <h1>Admin access</h1>
+          <p class="muted">Enter the admin password to unlock the key generator.</p>
+          <div class="card">
+            <div class="field">
+              <div class="label"><span>Password</span></div>
+              <input id="admin-pw" type="password" class="input"
+                     placeholder="Admin password" autocomplete="off"
+                     data-testid="admin-password-input" />
+            </div>
+            <div class="form">
+              <button id="admin-unlock-btn" class="btn primary" data-testid="admin-unlock-btn">Unlock</button>
+            </div>
+            <div id="admin-gate-result" class="result" data-testid="admin-gate-result"></div>
+          </div>
+        </div>
+
+        <div id="admin-menu" class="hidden">
+          <div class="row-between">
+            <h1>Admin menu</h1>
+            <button id="admin-lock-btn" class="btn small ghost" data-testid="admin-lock-btn">Lock</button>
+          </div>
+
+          <div class="card">
+            <h2>Generate a key</h2>
+            <p class="muted">
+              Embed up to <strong id="max-chars-label">200</strong> characters of data into a generated key.
+              When redeemed, the user sees:
+              <em>"Congratulations! you have redeemed (your text)"</em>.
+            </p>
+            <div class="field">
+              <div class="label"><span>Embedded text</span><span id="gen-len" class="muted">0 / 200</span></div>
+              <input id="gen-text" class="input" maxlength="200"
+                     placeholder="e.g. 1 month VIP subscription" data-testid="generate-text-input" />
+            </div>
+            <div class="field">
+              <div class="label"><span>Optional file link (Google Drive, Dropbox, etc.)</span></div>
+              <input id="gen-attachment" class="input" maxlength="1000"
+                     placeholder="https://drive.google.com/..." data-testid="generate-attachment-input" />
+            </div>
+            <div class="form">
+              <button id="gen-btn" class="btn primary" data-testid="generate-btn">Generate</button>
+            </div>
+            <div id="gen-result" class="result" data-testid="generate-result"></div>
+          </div>
+
+          <div class="card">
+            <h2>Revoke a key</h2>
+            <p class="muted">Paste a key here to permanently destroy it. Revoked keys can never be redeemed.</p>
+            <div class="field">
+              <div class="label"><span>Key</span></div>
+              <input id="revoke-input" class="input mono" maxlength="36"
+                     placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+                     data-testid="revoke-input" />
+            </div>
+            <div class="form">
+              <button id="revoke-btn" class="btn danger" data-testid="revoke-btn">Revoke</button>
+            </div>
+            <div id="revoke-result" class="result" data-testid="revoke-result"></div>
+          </div>
+
+          <div class="card">
+            <div class="row-between">
+              <h2>Active keys</h2>
+              <button id="active-refresh" class="btn small ghost" data-testid="active-refresh-btn">Refresh</button>
+            </div>
+            <div id="active-list" class="history"></div>
+          </div>
+
+          <div class="card">
+            <div class="row-between">
+              <h2>Redeemed (server-wide)</h2>
+              <button id="server-redeemed-refresh" class="btn small ghost" data-testid="server-redeemed-refresh-btn">Refresh</button>
+            </div>
+            <div id="server-redeemed-list" class="history"></div>
+          </div>
+
+          <div class="card">
+            <div class="row-between">
+              <h2>Revoked keys</h2>
+              <button id="revoked-refresh" class="btn small ghost" data-testid="revoked-refresh-btn">Refresh</button>
+            </div>
+            <div id="revoked-list" class="history"></div>
+          </div>
+        </div>
+
+      </section>
+    </main>
+
+    <script src="renderer.js"></script>
+  </body>
+</html>

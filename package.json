@@ -1,0 +1,58 @@
+{
+  "name": "ultfox-code-redeemer",
+  "productName": "Ultfox Code Redeemer",
+  "version": "1.0.0",
+  "description": "Ultfox Code Redeemer - generate and redeem 36-character codes.",
+  "main": "main.js",
+  "author": "Ultfox",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win"
+  },
+  "build": {
+    "appId": "com.ultfox.coderedeemer",
+    "productName": "Ultfox Code Redeemer",
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer.js",
+      "keygen.js",
+      "config.js",
+      "index.html",
+      "styles.css",
+      "build/icon.ico"
+    ],
+    "directories": {
+      "buildResources": "build",
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "Ultfox-Code-Redeemer-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Ultfox Code Redeemer",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico"
+    }
+  },
+  "devDependencies": {
+    "electron": "^31.3.0",
+    "electron-builder": "^24.13.3"
+  },
+  "dependencies": {}
+}
