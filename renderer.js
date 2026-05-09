@@ -5,7 +5,13 @@ const $ = (id) => document.getElementById(id);
 
 let NOTIFY_EMAIL = 'Ultfox4@gmail.com';
 let MAX_TEXT = 200;
-let adminPassword = null; // held in memory only after successful unlock
+let adminPassword = null;
+
+// ---------- SAFE ADD EVENT ----------
+function on(id, event, fn) {
+  const el = $(id);
+  if (el) el.addEventListener(event, fn);
+}
 
 // ---------- Tabs ----------
 function activateTab(targetId) {
@@ -13,6 +19,7 @@ function activateTab(targetId) {
     const isActive = t.dataset.target === targetId;
     t.classList.toggle('active', isActive);
   });
+
   document.querySelectorAll('.panel').forEach((p) => {
     p.classList.toggle('active', p.id === targetId);
   });
@@ -22,8 +29,9 @@ document.querySelectorAll('.tab').forEach((tab) => {
   tab.addEventListener('click', () => activateTab(tab.dataset.target));
 });
 
-// ---------- Result helpers ----------
+// ---------- Result ----------
 function setResult(el, html, kind) {
+  if (!el) return;
   el.className = 'result' + (kind ? ` ${kind}` : '');
   el.innerHTML = html;
 }
@@ -43,268 +51,212 @@ function escapeHtml(str) {
     const meta = await window.ultfox.meta();
     NOTIFY_EMAIL = meta.notifyEmail || NOTIFY_EMAIL;
     MAX_TEXT = meta.maxTextChars || MAX_TEXT;
-    $('notify-email-label').textContent = NOTIFY_EMAIL;
-    $('max-chars-label').textContent = MAX_TEXT;
-    $('gen-text').setAttribute('maxlength', String(MAX_TEXT));
-    $('gen-len').textContent = `0 / ${MAX_TEXT}`;
+
+    const emailLabel = $('notify-email-label');
+    if (emailLabel) emailLabel.textContent = NOTIFY_EMAIL;
+
+    const maxLabel = $('max-chars-label');
+    if (maxLabel) maxLabel.textContent = MAX_TEXT;
+
+    const genText = $('gen-text');
+    if (genText) genText.setAttribute('maxlength', String(MAX_TEXT));
+
+    const genLen = $('gen-len');
+    if (genLen) genLen.textContent = `0 / ${MAX_TEXT}`;
+
   } catch {}
+
   await refreshLocalRedeemedList();
 })();
 
-// ---------- Char counters ----------
-$('redeem-input').addEventListener('input', (e) => {
-  $('redeem-len').textContent = `${e.target.value.length} / 36`;
+// ---------- Counters ----------
+on('redeem-input', 'input', (e) => {
+  const el = $('redeem-len');
+  if (el) el.textContent = `${e.target.value.length} / 36`;
 });
-$('gen-text').addEventListener('input', (e) => {
-  $('gen-len').textContent = `${e.target.value.length} / ${MAX_TEXT}`;
+
+on('gen-text', 'input', (e) => {
+  const el = $('gen-len');
+  if (el) el.textContent = `${e.target.value.length} / ${MAX_TEXT}`;
 });
-$('req-message').addEventListener('input', (e) => {
-  $('req-msg-len').textContent = `${e.target.value.length} / 500`;
+
+on('req-message', 'input', (e) => {
+  const el = $('req-msg-len');
+  if (el) el.textContent = `${e.target.value.length} / 500`;
 });
 
 // ---------- Redeem ----------
-$('redeem-btn').addEventListener('click', async () => {
+on('redeem-btn', 'click', async () => {
   const result = $('redeem-result');
-  const key = $('redeem-input').value.trim();
-  if (!key) {
-    setResult(result, 'Please enter a key.', 'error');
-    return;
-  }
+  const key = $('redeem-input')?.value.trim();
+
+  if (!key) return setResult(result, 'Please enter a key.', 'error');
+
   setResult(result, 'Redeeming...');
+
   const r = await window.ultfox.redeemKey(key);
-  if (!r.ok) {
-    setResult(result, escapeHtml(r.error || 'Could not redeem key.'), 'error');
-    return;
-  }
+  if (!r.ok) return setResult(result, escapeHtml(r.error), 'error');
+
   const text = r.text || '';
   const attachment = r.attachment_url || '';
+
   let html = `
-    <div class="big">Congratulations! you have redeemed ${escapeHtml(text)}</div>
+    <div class="big">You redeemed ${escapeHtml(text)}</div>
     <div class="muted">Key: <span class="mono">${escapeHtml(r.key)}</span></div>
   `;
+
   if (attachment) {
-    html += `<div style="margin-top:8px;">Attachment: <a href="#" id="redeem-attach-link" data-url="${escapeHtml(attachment)}">${escapeHtml(attachment)}</a></div>`;
+    html += `<div><a href="#" id="redeem-attach-link" data-url="${escapeHtml(attachment)}">${escapeHtml(attachment)}</a></div>`;
   }
+
   setResult(result, html, 'success');
 
-  if (attachment) {
-    const link = document.getElementById('redeem-attach-link');
-    if (link) {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        window.ultfox.openExternal(link.dataset.url);
-      });
-    }
-  }
+  on('redeem-attach-link', 'click', (e) => {
+    e.preventDefault();
+    window.ultfox.openExternal(e.target.dataset.url);
+  });
 
-  // Notify owner via mailto
-  const subject = encodeURIComponent(`[Ultfox] Key ${r.key} has been redeemed`);
-  const body = encodeURIComponent(
-    `${r.key} has been redeemed for ${text}\n\n` +
-    (attachment ? `Attachment: ${attachment}\n\n` : '') +
-    `Time: ${new Date().toISOString()}`
+  const subject = encodeURIComponent(`[Ultfox] Key ${r.key} redeemed`);
+  const body = encodeURIComponent(`${r.key} -> ${text}\nTime: ${new Date().toISOString()}`);
+
+  window.ultfox.openExternal(
+    `https://mail.google.com/mail/?view=cm&fs=1` +
+    `&to=${encodeURIComponent(NOTIFY_EMAIL)}` +
+    `&subject=${subject}` +
+    `&body=${body}`
   );
-  window.ultfox.openExternal(   `https://mail.google.com/mail/?view=cm&fs=1` +   `&to=${encodeURIComponent(NOTIFY_EMAIL)}` +   `&subject=${subject}` +   `&body=${body}` );
 
-  $('redeem-input').value = '';
-  $('redeem-len').textContent = '0 / 36';
-  await refreshLocalRedeemedList();
+  if ($('redeem-input')) $('redeem-input').value = '';
+  refreshLocalRedeemedList();
 });
 
-$('redeem-request-btn').addEventListener('click', () => activateTab('request-panel'));
+// ---------- Request ----------
+on('req-send-btn', 'click', () => {
+  const name = $('req-name')?.value.trim();
+  const reason = $('req-reason')?.value.trim();
+  const message = $('req-message')?.value.trim();
 
-// ---------- Request a code ----------
-$('req-send-btn').addEventListener('click', () => {
   const result = $('req-result');
-  const name = $('req-name').value.trim();
-  const reason = $('req-reason').value.trim();
-  const message = $('req-message').value.trim();
-  if (!name) {
-    setResult(result, 'Please enter your name.', 'error');
-    return;
-  }
-  if (!reason) {
-    setResult(result, 'Please enter a reason / request.', 'error');
-    return;
-  }
-  if (!message) {
-    setResult(result, 'Please enter a message (up to 500 chars).', 'error');
-    return;
-  }
-  const subject = encodeURIComponent(`[Ultfox] Code request from ${name}`);
-  const body = encodeURIComponent(
-    `${name} has requested ${reason} and would like to say ${message}`
+
+  if (!name || !reason || !message)
+    return setResult(result, 'Fill all fields.', 'error');
+
+  const subject = encodeURIComponent(`[Ultfox] Request from ${name}`);
+  const body = encodeURIComponent(`${name}\n${reason}\n${message}`);
+
+  window.ultfox.openExternal(
+    `https://mail.google.com/mail/?view=cm&fs=1` +
+    `&to=${encodeURIComponent(NOTIFY_EMAIL)}` +
+    `&subject=${subject}` +
+    `&body=${body}`
   );
-  // (removed mailto fallback - using Gmail web compose)
-  window.ultfox.openExternal(   `https://mail.google.com/mail/?view=cm&fs=1` +   `&to=${encodeURIComponent(NOTIFY_EMAIL)}` +   `&subject=${subject}` +   `&body=${body}` );
-  setResult(result, 'Email opened in your default mail app. Send it to finish your request.', 'success');
+
+  setResult(result, 'Opened Gmail.', 'success');
 });
 
-// ---------- Admin gate ----------
-$('admin-unlock-btn').addEventListener('click', async () => {
+// ---------- Admin ----------
+on('admin-unlock-btn', 'click', async () => {
+  const pw = $('admin-pw')?.value;
   const result = $('admin-gate-result');
-  const pw = $('admin-pw').value;
-  if (!pw) {
-    setResult(result, 'Please enter the admin password.', 'error');
-    return;
-  }
-  setResult(result, 'Verifying...');
+
+  if (!pw) return setResult(result, 'Enter password.', 'error');
+
+  setResult(result, 'Checking...');
+
   const r = await window.ultfox.verifyAdmin(pw);
-  if (!r.ok) {
-    setResult(result, escapeHtml(r.error || 'Incorrect password.'), 'error');
-    return;
-  }
+  if (!r.ok) return setResult(result, 'Wrong password.', 'error');
+
   adminPassword = pw;
-  $('admin-pw').value = '';
-  setResult(result, '');
-  $('admin-gate').classList.add('hidden');
-  $('admin-menu').classList.remove('hidden');
-  await Promise.all([refreshActiveList(), refreshServerRedeemedList(), refreshRevokedList()]);
+
+  if ($('admin-gate')) $('admin-gate').classList.add('hidden');
+  if ($('admin-menu')) $('admin-menu').classList.remove('hidden');
+
+  refreshAll();
 });
 
-$('admin-lock-btn').addEventListener('click', () => {
+on('admin-lock-btn', 'click', () => {
   adminPassword = null;
-  $('admin-menu').classList.add('hidden');
-  $('admin-gate').classList.remove('hidden');
-  $('active-list').innerHTML = '';
-  $('server-redeemed-list').innerHTML = '';
-  $('revoked-list').innerHTML = '';
+
+  if ($('admin-menu')) $('admin-menu').classList.add('hidden');
+  if ($('admin-gate')) $('admin-gate').classList.remove('hidden');
 });
 
 // ---------- Generate ----------
-$('gen-btn').addEventListener('click', async () => {
-  const result = $('gen-result');
-  if (!adminPassword) {
-    setResult(result, 'Locked. Re-enter the password.', 'error');
-    return;
-  }
-  const text = $('gen-text').value;
-  const attachmentUrl = $('gen-attachment').value.trim();
-  if (text.length > MAX_TEXT) {
-    setResult(result, `Text too long. Max ${MAX_TEXT} characters.`, 'error');
-    return;
-  }
-  if (attachmentUrl && !/^https?:\/\//i.test(attachmentUrl)) {
-    setResult(result, 'Attachment must be an http(s) URL (e.g. Google Drive share link).', 'error');
-    return;
-  }
-  setResult(result, 'Generating...');
-  const r = await window.ultfox.generateKey({ password: adminPassword, text, attachmentUrl });
-  if (!r.ok) {
-    setResult(result, escapeHtml(r.error || 'Could not generate.'), 'error');
-    return;
-  }
-  setResult(
-    result,
-    `<div class="muted">New key (click to select):</div>
-     <div class="key-display mono" id="gen-key-display">${escapeHtml(r.key)}</div>
-     <div class="muted">Embedded text: <strong>${escapeHtml(text || '(empty)')}</strong></div>` +
-     (attachmentUrl ? `<div class="muted">Attachment: ${escapeHtml(attachmentUrl)}</div>` : ''),
-    'success'
-  );
-  $('gen-text').value = '';
-  $('gen-attachment').value = '';
-  $('gen-len').textContent = `0 / ${MAX_TEXT}`;
-  await refreshActiveList();
+on('gen-btn', 'click', async () => {
+  if (!adminPassword) return;
+
+  const text = $('gen-text')?.value || '';
+  const attachmentUrl = $('gen-attachment')?.value?.trim() || '';
+
+  const r = await window.ultfox.generateKey({
+    password: adminPassword,
+    text,
+    attachmentUrl
+  });
+
+  if (!r.ok) return;
+
+  setResult($('gen-result'), `Key: ${r.key}`, 'success');
+  refreshActiveList();
 });
 
 // ---------- Revoke ----------
-$('revoke-btn').addEventListener('click', async () => {
-  const result = $('revoke-result');
-  if (!adminPassword) {
-    setResult(result, 'Locked. Re-enter the password.', 'error');
-    return;
-  }
-  const key = $('revoke-input').value.trim();
-  if (!key) {
-    setResult(result, 'Please enter a key to revoke.', 'error');
-    return;
-  }
-  setResult(result, 'Revoking...');
-  const r = await window.ultfox.revokeKey({ password: adminPassword, key });
-  if (!r.ok) {
-    setResult(result, escapeHtml(r.error || 'Could not revoke.'), 'error');
-    return;
-  }
-  setResult(result, 'Key revoked. It can never be redeemed.', 'success');
-  $('revoke-input').value = '';
-  await Promise.all([refreshActiveList(), refreshRevokedList()]);
+on('revoke-btn', 'click', async () => {
+  if (!adminPassword) return;
+
+  const key = $('revoke-input')?.value.trim();
+  if (!key) return;
+
+  await window.ultfox.revokeKey({ password: adminPassword, key });
+
+  refreshAll();
 });
 
 // ---------- Lists ----------
-function renderList(container, items, dateField, opts = {}) {
-  if (!items.length) {
-    container.innerHTML = '<div class="muted" style="padding:8px 4px;">Nothing here yet.</div>';
+function renderList(container, items, field) {
+  if (!container) return;
+
+  if (!items?.length) {
+    container.innerHTML = '<div class="muted">Empty</div>';
     return;
   }
-  container.innerHTML = items
-    .map((it) => {
-      const when = it[dateField] ? new Date(it[dateField]).toLocaleString() : '';
-      const attach = it.attachment_url
-        ? `<div class="muted">Attachment: ${escapeHtml(it.attachment_url)}</div>`
-        : '';
-      const copyBtn = `<button class="btn small ghost" data-copy="${escapeHtml(it.key)}">Copy</button>`;
-      const revokeBtn = opts.canRevoke
-        ? `<button class="btn small danger" data-revoke="${escapeHtml(it.key)}">Revoke</button>`
-        : '';
-      return `
-        <div class="history-item">
-          <div>
-            <div class="text">${escapeHtml(it.text || '(no text)')}</div>
-            <div class="key mono">${escapeHtml(it.key)}</div>
-            ${attach}
-          </div>
-          <div class="when muted">${escapeHtml(when)}</div>
-          <div>${copyBtn}</div>
-          <div>${revokeBtn}</div>
-        </div>`;
-    })
-    .join('');
 
-  container.querySelectorAll('[data-copy]').forEach((btn) => {
-    btn.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(btn.dataset.copy);
-        btn.textContent = 'Copied';
-        setTimeout(() => (btn.textContent = 'Copy'), 1200);
-      } catch {}
-    });
-  });
-  container.querySelectorAll('[data-revoke]').forEach((btn) => {
-    btn.addEventListener('click', async () => {
-      if (!adminPassword) return;
-      const r = await window.ultfox.revokeKey({ password: adminPassword, key: btn.dataset.revoke });
-      if (r.ok) {
-        await Promise.all([refreshActiveList(), refreshRevokedList()]);
-      }
-    });
-  });
+  container.innerHTML = items.map(i => `
+    <div class="history-item">
+      <div>${escapeHtml(i.text || '')}</div>
+      <div class="mono">${escapeHtml(i.key)}</div>
+    </div>
+  `).join('');
 }
 
 async function refreshLocalRedeemedList() {
-  const list = (await window.ultfox.redeemedHistory()) || [];
+  const list = await window.ultfox.redeemedHistory();
   renderList($('redeemed-list'), list, 'redeemedAt');
 }
 
-async function loadServerSummary() {
-  if (!adminPassword) return null;
-  return window.ultfox.storeSummary(adminPassword);
-}
-
 async function refreshActiveList() {
-  const r = await loadServerSummary();
-  if (r?.ok) renderList($('active-list'), r.active, 'created_at', { canRevoke: true });
-}
-async function refreshServerRedeemedList() {
-  const r = await loadServerSummary();
-  if (r?.ok) renderList($('server-redeemed-list'), r.redeemed, 'redeemed_at');
-}
-async function refreshRevokedList() {
-  const r = await loadServerSummary();
-  if (r?.ok) renderList($('revoked-list'), r.revoked, 'revoked_at');
+  const r = await window.ultfox.storeSummary(adminPassword);
+  if (r?.ok) renderList($('active-list'), r.active);
 }
 
-$('redeemed-refresh').addEventListener('click', refreshLocalRedeemedList);
-$('active-refresh').addEventListener('click', refreshActiveList);
-$('server-redeemed-refresh').addEventListener('click', refreshServerRedeemedList);
-$('revoked-refresh').addEventListener('click', refreshRevokedList);
+async function refreshServerRedeemedList() {
+  const r = await window.ultfox.storeSummary(adminPassword);
+  if (r?.ok) renderList($('server-redeemed-list'), r.redeemed);
+}
+
+async function refreshRevokedList() {
+  const r = await window.ultfox.storeSummary(adminPassword);
+  if (r?.ok) renderList($('revoked-list'), r.revoked);
+}
+
+function refreshAll() {
+  refreshActiveList();
+  refreshServerRedeemedList();
+  refreshRevokedList();
+}
+
+// ---------- refresh buttons ----------
+on('redeemed-refresh', 'click', refreshLocalRedeemedList);
+on('active-refresh', 'click', refreshActiveList);
+on('server-redeemed-refresh', 'click', refreshServerRedeemedList);
+on('revoked-refresh', 'click', refreshRevokedList);
