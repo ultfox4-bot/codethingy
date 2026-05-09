@@ -104,7 +104,7 @@ $('redeem-btn').addEventListener('click', async () => {
     (attachment ? `Attachment: ${attachment}\n\n` : '') +
     `Time: ${new Date().toISOString()}`
   );
-  window.ultfox.openMail(`mailto:${NOTIFY_EMAIL}?subject=${subject}&body=${body}`);
+  window.ultfox.openExternal(   `https://mail.google.com/mail/?view=cm&fs=1` +   `&to=${encodeURIComponent(NOTIFY_EMAIL)}` +   `&subject=${subject}` +   `&body=${body}` );
 
   $('redeem-input').value = '';
   $('redeem-len').textContent = '0 / 36';
@@ -135,8 +135,8 @@ $('req-send-btn').addEventListener('click', () => {
   const body = encodeURIComponent(
     `${name} has requested ${reason} and would like to say ${message}`
   );
-  const url = `mailto:${NOTIFY_EMAIL}?subject=${subject}&body=${body}`;
-  window.ultfox.openMail(url);
+  // (removed mailto fallback - using Gmail web compose)
+  window.ultfox.openExternal(   `https://mail.google.com/mail/?view=cm&fs=1` +   `&to=${encodeURIComponent(NOTIFY_EMAIL)}` +   `&subject=${subject}` +   `&body=${body}` );
   setResult(result, 'Email opened in your default mail app. Send it to finish your request.', 'success');
 });
 
