@@ -4,7 +4,7 @@
 const $ = (id) => document.getElementById(id);
 
 let NOTIFY_EMAIL = 'Ultfox4@gmail.com';
-let MAX_TEXT = 200;
+let MAX_TEXT = 2000;
 let adminPassword = null;
 
 // ---------- SAFE ADD EVENT ----------
